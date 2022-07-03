@@ -97,5 +97,5 @@ int main()
   }
   // Close the socket
   close(dg_sock);
-  exit(0);
+  return 0;
 }
