@@ -16,6 +16,7 @@ using namespace std;
 #define MAXBUFLEN 4096
 #define IPADDR "127.0.0.1"
 #define FILENAME "block1.txt"
+#define SERVERNAME "ServerA"
 
 string encode(string originalString)
 {
@@ -109,7 +110,7 @@ int createBindDatagramSocket()
   // We let the transport layer decide the protocol based on 'Type'
   if ((dg_sock = socket(DOMAIN, SOCK_DGRAM, 0)) == -1)
   {
-    cerr << "Datagram socket could not be created for ServerA";
+    cerr << "Datagram socket could not be created for " << SERVERNAME;
     return -1;
   }
 
@@ -124,7 +125,7 @@ int createBindDatagramSocket()
   if ((::bind(dg_sock, (const sockaddr *)&dg_hint, sizeof(dg_hint))) == -1)
   //if ((bind(stream_welcoming_sock, (sockaddr *)&stream_hint, sizeof(stream_hint))) == -1)
   {
-    cerr << "Datagram socket IP/Port binding could not be done for ServerA";
+    cerr << "Datagram socket IP/Port binding could not be done for " << SERVERNAME;
     return -1;
   }
   return dg_sock;
@@ -284,7 +285,7 @@ int main()
     return -1;
   }
 
-  cout << "The ServerA is up and running using UDP on port " << UDPPORT << "." << endl;
+  cout << "The " << SERVERNAME << " is up and running using UDP on port " << UDPPORT << "." << endl;
 
   // Recieve message
   sockaddr_in client;
@@ -300,17 +301,17 @@ int main()
     int bytesRecv = recvfrom(dg_sock, buf, MAXBUFLEN - 1, 0, (sockaddr *)&client, &clientLen);
     if (bytesRecv == -1)
     {
-      cerr << "ServerA could not recieve msg from Main Server" << endl;
+      cerr << SERVERNAME << " could not recieve msg from Main Server" << endl;
       continue;
     }
 
     if (bytesRecv == 0)
     {
-      cout << "Main Server did not send on ServerA" << endl;
+      cout << "Main Server did not send on " << SERVERNAME << endl;
       continue;
     }
 
-    cout << "The ServerA received a request from the Main Server." << endl;
+    cout << "The " << SERVERNAME << " received a request from the Main Server." << endl;
 
     // Process Request
 
@@ -353,13 +354,13 @@ int main()
     // Send message
     if (sendto(dg_sock, char_array, n + 1, 0, (sockaddr *)&client, clientLen) == -1)
     {
-      cerr << "Error sending message from ServerA to Main Server "
+      cerr << "Error sending message from " << SERVERNAME << " to Main Server "
            << endl;
       continue;
     }
     else
     {
-      cout << "The ServerA finished sending the response to the Main Server." << endl;
+      cout << "The " << SERVERNAME << " finished sending the response to the Main Server." << endl;
     }
   }
   // Close the socket
