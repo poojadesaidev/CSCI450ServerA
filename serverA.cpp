@@ -84,16 +84,16 @@ int main()
          << " : "
          << string(buf, 0, bytesRecv) << endl;
 
-    // // Send message
-    // if (send(dg_sock, buf, bytesRecv + 1, 0) == -1)
-    // {
-    //   cerr << "Error sending message from ServerA to client "
-    //        << string(clientIp, 0, 256)
-    //        << " who was requesting for service on port "
-    //        << ntohs(client.sin_port)
-    //        << endl;
-    //   continue;
-    // }
+    // Send message
+    if (sendto(dg_sock, buf, bytesRecv + 1, 0, (sockaddr *)&client, clientLen) == -1)
+    {
+      cerr << "Error sending message from ServerA to client "
+           << string(clientIp, 0, 256)
+           << " who was requesting for service on port "
+           << ntohs(client.sin_port)
+           << endl;
+      continue;
+    }
   }
   // Close the socket
   close(dg_sock);
