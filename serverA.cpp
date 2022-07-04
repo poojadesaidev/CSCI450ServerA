@@ -215,10 +215,17 @@ string checkWallet(string request)
 string logTransaction(string request)
 {
   istringstream stringStream(request);
-  string transaction;
-  stringStream >> transaction;
-  stringStream >> transaction;
-  return writeTransactionToFile(transaction);
+  string trnstnSingle;
+  string trnstnComplete = "";
+  stringStream >> trnstnSingle;
+  while (stringStream >> trnstnSingle)
+  {
+    trnstnComplete = trnstnComplete + trnstnSingle + " ";
+  }
+  size_t end = trnstnComplete.find_last_not_of(" ");
+  trnstnComplete = (end == std::string::npos) ? "" : trnstnComplete.substr(0, end + 1);
+
+  return writeTransactionToFile(trnstnComplete);
 }
 
 string getMaxSerialNum()
@@ -278,7 +285,7 @@ int main()
       // Check Wallet
       response = checkWallet(request);
     }
-    else if (serviceRequested.compare("put") == 0)
+    else if (serviceRequested.compare("log") == 0)
     {
       // Log Transaction
       response = logTransaction(request);
