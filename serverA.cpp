@@ -6,6 +6,8 @@
 #include <arpa/inet.h>
 #include <string.h>
 #include <string>
+#include <sstream>
+#include <fstream>
 
 using namespace std;
 
@@ -13,8 +15,52 @@ using namespace std;
 #define DOMAIN PF_INET // TODO change domain to AF_INET for Unix
 #define MAXBUFLEN 4096
 #define IPADDR "127.0.0.1"
+#define FILENAME "block1.txt"
 
-int main()
+string decode(string encodedString)
+{
+
+  int n = encodedString.length();
+
+  // declaring character array
+  char original_char_array[n + 1];
+  char encoded_char_array[n + 1];
+
+  // copying the contents of the
+  // string to char array
+  strcpy(encoded_char_array, encodedString.c_str());
+
+  for (int i = 0; i < n + 1; i++)
+  {
+    char c = encoded_char_array[i];
+    //cout << encoded_char_array[i] << endl;
+    if (isdigit(c))
+    {
+      c = c - 3;
+      if (c < 48)
+      {
+        c = c + 10;
+      }
+    }
+    else if (isalpha(c))
+    {
+      c = c - 3;
+
+      if ((c < 97 && c > 90) || c < 65)
+      {
+        c = c + 26;
+      }
+    }
+    original_char_array[i] = c;
+  }
+
+  string s = original_char_array;
+
+  return s;
+  // cout << s << s.length() << endl;
+}
+
+int createBindDatagramSocket()
 {
   int dg_sock;
   // Create a DG Socket
@@ -38,14 +84,159 @@ int main()
   //if ((bind(stream_welcoming_sock, (sockaddr *)&stream_hint, sizeof(stream_hint))) == -1)
   {
     cerr << "Datagram socket IP/Port binding could not be done for ServerA";
-    return -2;
+    return -1;
+  }
+  return dg_sock;
+}
+
+string getCreditDebitTotal(string user)
+{
+  int creditDebitTotal = 0;
+  bool userFoundFlag = false;
+  string singleLine;
+
+  if (user.empty())
+  {
+    return "empty";
   }
 
-  cout << "The main UDP server is up and running on "
-       << IPADDR
-       << " and port "
-       << UDPPORT
-       << endl;
+  //cout << " User " << user << endl;
+
+  ifstream block1(FILENAME);
+
+  while (getline(block1, singleLine))
+  {
+    if (!singleLine.empty())
+    {
+      istringstream stringStream(singleLine);
+      string words[4];
+
+      for (int i = 0; i < 4; i++)
+      {
+        stringStream >> words[i];
+      }
+
+      if (words[3].empty())
+      {
+        return "empty";
+      }
+      int d;
+      try
+      {
+        string decodedValue = decode(words[3]);
+        d = stoi(decodedValue);
+      }
+      catch (...)
+      {
+        return "empty";
+      }
+
+      if (!words[1].empty() && words[1].compare(user) == 0)
+      {
+        userFoundFlag = true;
+        creditDebitTotal = creditDebitTotal - d;
+      }
+
+      if (!words[2].empty() && words[2].compare(user) == 0)
+      {
+        userFoundFlag = true;
+        creditDebitTotal = creditDebitTotal + d;
+      }
+    }
+  }
+
+  block1.close();
+
+  if (!userFoundFlag)
+  {
+    return "empty";
+  }
+  return to_string(creditDebitTotal);
+}
+
+string writeTransactionToFile(string transaction)
+{
+  if (transaction.empty())
+  {
+    return "empty";
+  }
+  fstream block1;
+
+  block1.open(FILENAME, ios_base::app | ios_base::in);
+  if (block1.is_open())
+  {
+    block1 << transaction << endl;
+    return "success";
+  }
+  else
+  {
+    return "invalid";
+  }
+  block1.close();
+}
+
+string readFileToGetMaxSerialNum()
+{
+  int creditDebitTotal = 0;
+  bool userFoundFlag = false;
+  string singleLine;
+  //TODO check if file exists
+  ifstream block1(FILENAME);
+  int maxTrns = -1;
+
+  while (getline(block1, singleLine))
+  {
+    if (!singleLine.empty())
+    {
+      istringstream stringStream(singleLine);
+      string transStr;
+      stringStream >> transStr;
+      int tn = stoi(transStr);
+      if (tn > maxTrns)
+      {
+        maxTrns = tn;
+      }
+    }
+  }
+
+  block1.close();
+  return to_string(maxTrns);
+}
+
+string checkWallet(string request)
+{
+  istringstream stringStream(request);
+  string userNameEncrptd;
+  stringStream >> userNameEncrptd;
+  stringStream >> userNameEncrptd;
+  return getCreditDebitTotal(userNameEncrptd);
+}
+
+string logTransaction(string request)
+{
+  istringstream stringStream(request);
+  string transaction;
+  stringStream >> transaction;
+  stringStream >> transaction;
+  return writeTransactionToFile(transaction);
+}
+
+string getMaxSerialNum()
+{
+  return readFileToGetMaxSerialNum();
+}
+
+int main()
+{
+
+  int dg_sock = createBindDatagramSocket();
+
+  if (dg_sock == -1)
+  {
+    return -1;
+  }
+
+  cout << "The ServerA is up and running using UDP on port " << UDPPORT << "." << endl;
 
   // Recieve message
   sockaddr_in client;
@@ -61,38 +252,66 @@ int main()
     int bytesRecv = recvfrom(dg_sock, buf, MAXBUFLEN - 1, 0, (sockaddr *)&client, &clientLen);
     if (bytesRecv == -1)
     {
-      cerr << "Datagram socket could not recieve msg from client on ServerA" << endl;
+      cerr << "ServerA could not recieve msg from Main Server" << endl;
       continue;
     }
 
     if (bytesRecv == 0)
     {
-      cout << "The client did not send on ServerA" << endl;
+      cout << "Main Server did not send on ServerA" << endl;
       continue;
     }
 
-    // Display message that was recieved and client info
-    char clientIp[256];
+    cout << "The ServerA received a request from the Main Server." << endl;
 
-    // Clear the buffer and client
-    memset(clientIp, 0, 256);
+    // Process Request
 
-    inet_ntop(DOMAIN, &client.sin_addr, clientIp, 256); // convert numeric array of the IP to pointer to string
+    string request = string(buf, 0, bytesRecv);
 
-    cout << "Received from " << string(clientIp, 0, 256)
-         << " on port " << ntohs(client.sin_port)
-         << " : "
-         << string(buf, 0, bytesRecv) << endl;
+    istringstream stringStream(request);
+    string serviceRequested;
+    stringStream >> serviceRequested;
+
+    string response;
+    if (serviceRequested.compare("check") == 0)
+    {
+      // Check Wallet
+      response = checkWallet(request);
+    }
+    else if (serviceRequested.compare("put") == 0)
+    {
+      // Log Transaction
+      response = logTransaction(request);
+    }
+    else if (serviceRequested.compare("serialnum") == 0)
+    {
+      // Get max serial number
+      response = getMaxSerialNum();
+    }
+    else if (serviceRequested.compare("list") == 0)
+    {
+      // List Transactions
+      response = "TODO";
+    }
+    else
+    {
+      response = "invalid";
+    }
+
+    int n = response.length();
+    char char_array[n + 1];
+    strcpy(char_array, response.c_str());
 
     // Send message
-    if (sendto(dg_sock, buf, bytesRecv + 1, 0, (sockaddr *)&client, clientLen) == -1)
+    if (sendto(dg_sock, char_array, n + 1, 0, (sockaddr *)&client, clientLen) == -1)
     {
-      cerr << "Error sending message from ServerA to client "
-           << string(clientIp, 0, 256)
-           << " who was requesting for service on port "
-           << ntohs(client.sin_port)
+      cerr << "Error sending message from ServerA to Main Server "
            << endl;
       continue;
+    }
+    else
+    {
+      cout << "The ServerA finished sending the response to the Main Server." << endl;
     }
   }
   // Close the socket
