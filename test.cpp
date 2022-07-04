@@ -83,7 +83,7 @@ int main()
   int d;
   try
   {
-    d = std::stoi(s);
+    d = stoi(s);
     cout << "Converted Value " + to_string(d);
   }
   catch (...)
