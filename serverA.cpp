@@ -17,6 +17,47 @@ using namespace std;
 #define IPADDR "127.0.0.1"
 #define FILENAME "block1.txt"
 
+string encode(string originalString)
+{
+
+  int n = originalString.length();
+
+  // declaring character array
+  char original_char_array[n + 1];
+  char encoded_char_array[n];
+
+  // copying the contents of the
+  // string to char array
+  strcpy(original_char_array, originalString.c_str());
+
+  for (int i = 0; i < n + 1; i++)
+  {
+    char c = original_char_array[i];
+    if (isdigit(c))
+    {
+      c = c + 3;
+      if (c > 57)
+      {
+        c = c - 10;
+      }
+    }
+    else if (isalpha(c))
+    {
+      c = c + 3;
+
+      if ((c > 90 && c < 97) || c > 122)
+      {
+        c = c - 26;
+      }
+    }
+    encoded_char_array[i] = c;
+  }
+
+  string s = encoded_char_array;
+  return s;
+  // cout << s << s.length() << endl;
+}
+
 string decode(string encodedString)
 {
 
@@ -151,7 +192,7 @@ string getCreditDebitTotal(string user)
   {
     return "empty";
   }
-  return to_string(creditDebitTotal);
+  return encode(to_string(creditDebitTotal));
 }
 
 string writeTransactionToFile(string transaction)
